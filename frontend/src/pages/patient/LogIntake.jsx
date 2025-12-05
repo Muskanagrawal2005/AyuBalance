@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosInstance';
 
+
 const LogIntake = () => {
   // State for Date & Data
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [dailyLog, setDailyLog] = useState(null);
-  
+
   // State for Adding Food
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedMeal, setSelectedMeal] = useState('breakfast');
   const [loading, setLoading] = useState(false);
+
 
   // 1. Fetch Log when Date changes
   const fetchLog = async () => {
@@ -33,7 +35,7 @@ const LogIntake = () => {
       const { data } = await api.get(`/food?search=${searchTerm}`);
       setSearchResults(data);
     };
-    
+
     const timeout = setTimeout(searchFood, 500); // Debounce
     return () => clearTimeout(timeout);
   }, [searchTerm]);
@@ -59,13 +61,18 @@ const LogIntake = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Daily Food Log</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Daily Food Log</h1>
+        <p className="text-gray-500 text-sm">
+          Data is automatically shared with your Dietitian.
+        </p>
+      </div>
 
       {/* Date Picker */}
       <div className="mb-6 flex items-center gap-4 bg-white p-4 rounded shadow">
         <label className="font-medium text-gray-700">Select Date:</label>
-        <input 
-          type="date" 
+        <input
+          type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
           className="border p-2 rounded focus:ring-2 focus:ring-emerald-500"
@@ -79,12 +86,12 @@ const LogIntake = () => {
         {/* LEFT COLUMN: Add Food Form */}
         <div className="bg-white p-6 rounded shadow h-fit">
           <h2 className="text-lg font-bold mb-4">Add Food</h2>
-          
+
           {/* Meal Selector */}
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Meal Type</label>
-            <select 
-              value={selectedMeal} 
+            <select
+              value={selectedMeal}
               onChange={(e) => setSelectedMeal(e.target.value)}
               className="w-full border p-2 rounded"
             >
@@ -97,47 +104,47 @@ const LogIntake = () => {
 
           {/* Search Input */}
           <div className="relative">
-            <input 
-              type="text" 
-              placeholder="Search food (e.g. Rice)..." 
+            <input
+              type="text"
+              placeholder="Search food (e.g. Rice)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full border p-2 rounded"
             />
-            
+
             {/* Search Results Dropdown */}
             {/* Search Results Dropdown */}
-{searchResults.length > 0 && (
-  <div className="absolute top-full left-0 w-full bg-white border shadow-lg max-h-48 overflow-y-auto z-10">
-    {searchResults.map(food => (
-      <div 
-        key={food._id} 
-        // We remove the onClick from the parent div to avoid accidental clicks
-        className="p-2 border-b flex justify-between items-center hover:bg-gray-50"
-      >
-        <div>
-          <span className="font-medium text-gray-800">{food.name}</span>
-          <span className="text-xs text-gray-500 ml-2">{food.calories} cal</span>
-        </div>
-        
-        {/* explicit ADD BUTTON */}
-        <button 
-          onClick={() => handleAddFood(food)}
-          className="bg-emerald-600 text-white px-3 py-1 rounded text-xs hover:bg-emerald-700 transition"
-        >
-          Add +
-        </button>
-      </div>
-    ))}
-  </div>
-)}
+            {searchResults.length > 0 && (
+              <div className="absolute top-full left-0 w-full bg-white border shadow-lg max-h-48 overflow-y-auto z-10">
+                {searchResults.map(food => (
+                  <div
+                    key={food._id}
+                    // We remove the onClick from the parent div to avoid accidental clicks
+                    className="p-2 border-b flex justify-between items-center hover:bg-gray-50"
+                  >
+                    <div>
+                      <span className="font-medium text-gray-800">{food.name}</span>
+                      <span className="text-xs text-gray-500 ml-2">{food.calories} cal</span>
+                    </div>
+
+                    {/* explicit ADD BUTTON */}
+                    <button
+                      onClick={() => handleAddFood(food)}
+                      className="bg-emerald-600 text-white px-3 py-1 rounded text-xs hover:bg-emerald-700 transition"
+                    >
+                      Add +
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         {/* RIGHT COLUMN: Today's Log */}
         <div className="bg-white p-6 rounded shadow">
           <h2 className="text-lg font-bold mb-4">Logged Meals</h2>
-          
+
           {dailyLog && ['breakfast', 'lunch', 'dinner', 'snack'].map(meal => (
             <div key={meal} className="mb-4">
               <h3 className="font-bold uppercase text-xs text-gray-500 border-b mb-2">{meal}</h3>

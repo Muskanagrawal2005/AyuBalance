@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const IntakeLogSchema = new mongoose.Schema({
   patient: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  dietitian: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   date: { type: Date, required: true }, // e.g., 2025-01-20
   
   // We group logs by meal type

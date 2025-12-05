@@ -4,7 +4,7 @@ const { protect, restrictTo } = require('../middlewares/authMiddleware');
 const { getMyPlans } = require('../controllers/patientController');
 const { logIntake, getIntakeByDate } = require('../controllers/intakeController');
 const { getMyAnalysis } = require('../controllers/analysisController');
-
+const { getMyProfile } = require('../controllers/patientController'); // <--- Import getMyProfile
 // Import Appointment Controller
 const { 
   createOrder, 
@@ -26,5 +26,6 @@ router.route('/intake')
 router.post('/appointments/order', createOrder);       // Step 1: Get Order ID
 router.post('/appointments/verify', verifyPaymentAndBook); // Step 2: Verify & Save
 router.get('/appointments', getPatientAppointments);   // List My Bookings
+router.get('/profile', getMyProfile);
 
 module.exports = router;
