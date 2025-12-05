@@ -3,6 +3,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import api from '../../api/axiosInstance';
 
 const Register = () => {
   const { register } = useAuth();
@@ -22,14 +23,16 @@ const Register = () => {
     },
     validationSchema,
     onSubmit: async (values, { setSubmitting, setStatus }) => {
-      // Call the new register function
-      const result = await register(values.name, values.email, values.password);
+      // NOTE: We can't use the 'register' function from AuthContext anymore 
+      // because that one expects auto-login. We should call API directly here.
       
-      if (result.success) {
-        // Redirect to Dietitian Dashboard immediately
-        navigate('/dashboard');
-      } else {
-        setStatus(result.message);
+      try {
+        await api.post('/auth/register', values);
+        // Show success UI
+        alert("Registration successful! Please check your email to verify.");
+        navigate('/auth/login');
+      } catch (error) {
+        setStatus(error.response?.data?.message || 'Registration failed');
       }
       setSubmitting(false);
     },

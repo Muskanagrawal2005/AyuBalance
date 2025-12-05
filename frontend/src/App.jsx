@@ -10,12 +10,14 @@ import BookAppointment from './pages/patient/BookAppointment';
 import LogIntake from './pages/patient/LogIntake';
 import Appointments from './pages/dietitian/Appointments';
 import Register from './pages/auth/Register';
+import VerifyEmail from './pages/auth/VerifyEmail';
 
 function App() {
   return (
     <Routes>
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/register" element={<Register />} />
+      <Route path="/auth/verify-email" element={<VerifyEmail />} />
 
       {/* ---------------- DIETITIAN ROUTES ---------------- */}
       <Route element={<ProtectedRoute allowedRoles={['dietitian']} />}>
