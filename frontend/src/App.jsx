@@ -4,16 +4,18 @@ import DietitianDashboard from './pages/dietitian/Dashboard';
 import MyPatients from './pages/dietitian/MyPatients';
 import FoodDatabase from './pages/dietitian/FoodDatabase';
 import PatientDetails from './pages/dietitian/PatientDetails';
-import PatientDashboard from './pages/patient/PatientDashboard'; 
+import PatientDashboard from './pages/patient/PatientDashboard';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import BookAppointment from './pages/patient/BookAppointment';
 import LogIntake from './pages/patient/LogIntake';
 import Appointments from './pages/dietitian/Appointments';
+import Register from './pages/auth/Register';
 
 function App() {
   return (
     <Routes>
       <Route path="/auth/login" element={<Login />} />
+      <Route path="/auth/register" element={<Register />} />
 
       {/* ---------------- DIETITIAN ROUTES ---------------- */}
       <Route element={<ProtectedRoute allowedRoles={['dietitian']} />}>
@@ -32,7 +34,7 @@ function App() {
         <Route path="/patient/dashboard" element={<PatientDashboard />} />
       </Route>
 
-      
+
       {/* Redirect Root to Login */}
       <Route path="/" element={<Navigate to="/auth/login" replace />} />
       <Route path="/patient/log-intake" element={<LogIntake />} />

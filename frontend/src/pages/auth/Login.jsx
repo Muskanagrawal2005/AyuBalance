@@ -2,7 +2,7 @@ import React from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { jwtDecode } from "jwt-decode"; // <--- Import this!
 
 const Login = () => {
@@ -20,14 +20,14 @@ const Login = () => {
     onSubmit: async (values, { setSubmitting, setStatus }) => {
       // 1. Attempt Login
       const result = await login(values.email, values.password);
-      
+
       if (result.success) {
         // 2. Decode the token to find the Role
         const token = localStorage.getItem('accessToken');
-        
+
         try {
           const decoded = jwtDecode(token);
-          
+
           // 3. Traffic Control: Redirect based on Role
           if (decoded.role === 'dietitian') {
             navigate('/dashboard');
@@ -94,6 +94,14 @@ const Login = () => {
             {formik.isSubmitting ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+        <div className="mt-6 text-center text-sm">
+          <p className="text-gray-600">
+            Don't have an account?{' '}
+            <Link to="/auth/register" className="font-medium text-emerald-600 hover:text-emerald-500">
+              Register as Dietitian
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
