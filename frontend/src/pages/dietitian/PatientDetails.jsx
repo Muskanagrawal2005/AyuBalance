@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 import CreatePlanModal from '../../components/forms/CreatePlanModal';
 import NutrientChart from '../../components/charts/NutrientChart';
+import { useNavigate } from 'react-router-dom'; // Add useNavigate
+import EditPatientModal from '../../components/forms/EditPatientModal';
 
 const PatientDetails = () => {
   const { id } = useParams();
@@ -10,6 +12,8 @@ const PatientDetails = () => {
   const [plans, setPlans] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [analysisData, setAnalysisData] = useState(null);
+  const navigate = useNavigate(); // Hook for redirection
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // NEW STATE: For Intake Logs
   const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
@@ -70,15 +74,58 @@ const PatientDetails = () => {
     }
   }, [id]);
 
+  const handleDelete = async () => {
+    if (window.confirm("Are you sure you want to delete this patient? This action cannot be undone.")) {
+      try {
+        await api.delete(`/dietitian/patients/${id}`);
+        alert("Patient deleted.");
+        navigate('/dashboard/patients'); // Go back to list
+      } catch (error) {
+        alert("Failed to delete patient.");
+      }
+    }
+  };
+
+  const handleDeletePlan = async (planId) => {
+    if (window.confirm("Delete this diet plan? The patient will no longer see it.")) {
+      try {
+        await api.delete(`/dietitian/diet-plans/${planId}`);
+        // Remove from UI immediately without refreshing
+        setPlans(plans.filter(p => p._id !== planId));
+      } catch (error) {
+        alert("Failed to delete plan");
+      }
+    }
+  };
+
   if (!patient) return <div className="p-8">Loading...</div>;
 
   return (
     <div className="p-6">
-      <header className="mb-8 border-b pb-4">
-        <h1 className="text-3xl font-bold text-gray-800">{patient.name}</h1>
-        <div className="text-gray-600 mt-2 flex gap-4 text-sm">
-          <span>Email: {patient.email}</span>
-          <span>Dosha: {patient.ayurvedicDosha || 'N/A'}</span>
+      <header className="mb-8 border-b pb-4 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">{patient.name}</h1>
+          <div className="text-gray-600 mt-2 flex gap-4 text-sm">
+            <span>Email: {patient.email}</span>
+            <span>Dosha: {patient.ayurvedicDosha || 'N/A'}</span>
+            <span>Age: {patient.age}</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
+          >
+            Edit Profile
+          </button>
+          <button
+            onClick={handleDelete}
+            className="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600 transition"
+          >
+            Delete
+          </button>
         </div>
       </header>
 
@@ -112,6 +159,15 @@ const PatientDetails = () => {
                   <span>{plan.name}</span>
                   <span className="text-xs text-gray-400 font-normal">{new Date(plan.createdAt).toLocaleDateString()}</span>
                 </div>
+
+                <button
+                  onClick={() => handleDeletePlan(plan._id)}
+                  className="text-red-400 hover:text-red-600 px-2 py-1 text-xs border border-transparent hover:border-red-200 rounded"
+                  title="Delete Plan"
+                >
+                  🗑️ Delete
+                </button>
+
                 <div className="text-xs text-gray-600">
                   {plan.meals.map(m => (
                     <div key={m.mealType}>
@@ -171,6 +227,14 @@ const PatientDetails = () => {
         <CreatePlanModal
           patientId={id}
           onClose={() => setShowModal(false)}
+          onSuccess={fetchPatientData}
+        />
+      )}
+
+      {showEditModal && (
+        <EditPatientModal
+          patient={patient}
+          onClose={() => setShowEditModal(false)}
           onSuccess={fetchPatientData}
         />
       )}

@@ -114,3 +114,57 @@ exports.getPatientById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Update patient details
+// @route   PUT /api/dietitian/patients/:id
+exports.updatePatient = async (req, res) => {
+  try {
+    const { name, mobile, age, gender, ayurvedicDosha, allergies } = req.body;
+    
+    // Find patient and ensure they belong to this dietitian
+    const patient = await User.findOne({ 
+      _id: req.params.id, 
+      createdByDietitian: req.user._id 
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found or unauthorized' });
+    }
+
+    // Update fields
+    patient.name = name || patient.name;
+    patient.mobile = mobile || patient.mobile;
+    patient.age = age || patient.age;
+    patient.gender = gender || patient.gender;
+    patient.ayurvedicDosha = ayurvedicDosha || patient.ayurvedicDosha;
+    patient.allergies = allergies || patient.allergies;
+
+    const updatedPatient = await patient.save();
+    res.json(updatedPatient);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete a patient
+// @route   DELETE /api/dietitian/patients/:id
+exports.deletePatient = async (req, res) => {
+  try {
+    const patient = await User.findOneAndDelete({ 
+      _id: req.params.id, 
+      createdByDietitian: req.user._id 
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found or unauthorized' });
+    }
+
+    // Optional: Delete their diet plans and intake logs here too to keep DB clean
+    // await DietPlan.deleteMany({ patient: patient._id });
+    // await IntakeLog.deleteMany({ patient: patient._id });
+
+    res.json({ message: 'Patient removed' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

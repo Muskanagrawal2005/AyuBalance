@@ -58,8 +58,15 @@ const PatientDashboard = () => {
 
             {/* NEW: Upcoming Appointments Section */}
             <div className="mb-10">
-                <h3 className="text-lg font-semibold text-emerald-700 mb-4">My Appointments</h3>
-
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-emerald-700">My Appointments</h3>
+                    <Link
+                        to="/patient/book-appointment"
+                        className="bg-emerald-600 text-white px-4 py-2 rounded shadow hover:bg-emerald-700 transition flex items-center gap-2"
+                    >
+                        <span>📅</span> Book Appointment
+                    </Link>
+                </div>
                 <div className="grid gap-4 md:grid-cols-2">
                     {appointments.map(appt => (
                         <div key={appt._id} className="bg-white p-4 rounded shadow border-l-4 border-blue-500 flex justify-between items-center">
