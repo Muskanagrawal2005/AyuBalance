@@ -6,7 +6,9 @@ import FoodDatabase from './pages/dietitian/FoodDatabase';
 import PatientDetails from './pages/dietitian/PatientDetails';
 import PatientDashboard from './pages/patient/PatientDashboard'; 
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import BookAppointment from './pages/patient/BookAppointment';
 import LogIntake from './pages/patient/LogIntake';
+import Appointments from './pages/dietitian/Appointments';
 
 function App() {
   return (
@@ -20,6 +22,7 @@ function App() {
           <Route path="patients" element={<MyPatients />} />
           <Route path="patients/:id" element={<PatientDetails />} />
           <Route path="food-database" element={<FoodDatabase />} />
+          <Route path="appointments" element={<Appointments />} />
         </Route>
       </Route>
 
@@ -29,9 +32,11 @@ function App() {
         <Route path="/patient/dashboard" element={<PatientDashboard />} />
       </Route>
 
+      
       {/* Redirect Root to Login */}
       <Route path="/" element={<Navigate to="/auth/login" replace />} />
       <Route path="/patient/log-intake" element={<LogIntake />} />
+      <Route path="/patient/book-appointment" element={<BookAppointment />} />
     </Routes>
   );
 }

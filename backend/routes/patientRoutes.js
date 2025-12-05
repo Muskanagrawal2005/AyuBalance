@@ -1,25 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const { protect, restrictTo } = require('../middlewares/authMiddleware');
-
-// Import Controllers
 const { getMyPlans } = require('../controllers/patientController');
-// 👇 Ensure this path matches exactly where you created the file in Step 1
 const { logIntake, getIntakeByDate } = require('../controllers/intakeController');
 const { getMyAnalysis } = require('../controllers/analysisController');
 
-// Middleware
+// Import Appointment Controller
+const { 
+  createOrder, 
+  verifyPaymentAndBook, 
+  getPatientAppointments 
+} = require('../controllers/appointmentController');
+
 router.use(protect);
 router.use(restrictTo('patient'));
 
-// Diet Plan Route
 router.get('/my-plans', getMyPlans);
-
-// Intake Routes
-router.route('/intake')
-  .post(logIntake)        // <--- This was likely undefined before
-  .get(getIntakeByDate);  // <--- This too
-
 router.get('/analysis', getMyAnalysis);
+
+router.route('/intake')
+  .post(logIntake)
+  .get(getIntakeByDate);
+
+// --- NEW APPOINTMENT ROUTES ---
+router.post('/appointments/order', createOrder);       // Step 1: Get Order ID
+router.post('/appointments/verify', verifyPaymentAndBook); // Step 2: Verify & Save
+router.get('/appointments', getPatientAppointments);   // List My Bookings
 
 module.exports = router;

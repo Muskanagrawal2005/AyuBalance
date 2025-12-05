@@ -14,6 +14,7 @@ const DietitianDashboard = () => {
           <Link to="/dashboard" className="block px-6 py-3 hover:bg-emerald-700">Overview</Link>
           <Link to="/dashboard/patients" className="block px-6 py-3 hover:bg-emerald-700">My Patients</Link>
           <Link to="/dashboard/food-database" className="block px-6 py-3 hover:bg-emerald-700">Food Database</Link>
+          <Link to="/dashboard/appointments" className="block px-6 py-3 hover:bg-emerald-700">Appointments</Link>
           <button onClick={logout} className="w-full text-left px-6 py-3 hover:bg-red-600 mt-auto">Logout</button>
         </nav>
       </aside>

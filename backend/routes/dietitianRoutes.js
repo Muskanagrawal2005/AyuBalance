@@ -5,6 +5,7 @@ const { createPatient, getMyPatients, getPatientById } = require('../controllers
 const { createDietPlan, getPatientDietPlans } = require('../controllers/dietPlanController');
 const { getPatientLogForDietitian } = require('../controllers/intakeController');
 const { getPatientAnalysis } = require('../controllers/analysisController');
+const { getDietitianAppointments } = require('../controllers/appointmentController');
 
 // All routes here are protected and restricted to 'dietitian'
 router.use(protect);
@@ -24,6 +25,7 @@ router.route('/patients/:id')
 
 router.get('/patients/:patientId/logs', getPatientLogForDietitian);
 router.get('/patients/:id/analysis', getPatientAnalysis);
+router.get('/appointments', getDietitianAppointments);
 
 
 module.exports = router;

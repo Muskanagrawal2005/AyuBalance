@@ -9,6 +9,7 @@ const PatientDashboard = () => {
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [analysisData, setAnalysisData] = useState(null);
+    const [appointments, setAppointments] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -22,6 +23,10 @@ const PatientDashboard = () => {
                 const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
                 const { data: analysis } = await api.get(`/patient/analysis?from=${start}&to=${end}`);
                 setAnalysisData(analysis);
+                // ... inside fetchData function ...
+                // 3. Fetch Appointments (NEW)
+                const { data: apptData } = await api.get('/patient/appointments');
+                setAppointments(apptData);
 
             } catch (error) {
                 console.error("Failed to load data");
@@ -50,6 +55,39 @@ const PatientDashboard = () => {
 
             {/* ... inside main ... */}
             <h2 className="text-2xl font-bold text-gray-800 mb-6">My Health Dashboard</h2>
+
+            {/* NEW: Upcoming Appointments Section */}
+            <div className="mb-10">
+                <h3 className="text-lg font-semibold text-emerald-700 mb-4">My Appointments</h3>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                    {appointments.map(appt => (
+                        <div key={appt._id} className="bg-white p-4 rounded shadow border-l-4 border-blue-500 flex justify-between items-center">
+                            <div>
+                                <p className="font-bold text-gray-800">
+                                    {new Date(appt.date).toLocaleDateString()} at {appt.slotTime}
+                                </p>
+                                <p className="text-sm text-gray-600">Dr. {appt.dietitian?.name}</p>
+                                <span className={`text-xs px-2 py-1 rounded ${appt.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                    {appt.status}
+                                </span>
+                            </div>
+                            {appt.status === 'confirmed' && (
+                                <span className="text-xs font-bold text-emerald-600 border border-emerald-200 px-2 py-1 rounded">PAID</span>
+                            )}
+                        </div>
+                    ))}
+
+                    {appointments.length === 0 && (
+                        <div className="bg-white p-6 rounded shadow text-center">
+                            <p className="text-gray-500 mb-2">No upcoming appointments.</p>
+                            <Link to="/patient/book-appointment" className="text-emerald-600 font-bold hover:underline">
+                                Book One Now &rarr;
+                            </Link>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             {/* NEW: Charts Section */}
             <div className="mb-10">
