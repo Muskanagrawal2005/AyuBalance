@@ -1,5 +1,6 @@
 const IntakeLog = require('../models/IntakeLog');
 const FoodItem = require('../models/FoodItem');
+const User = require('../models/User'); // <--- 1. THIS WAS MISSING!
 
 // @desc    Log a meal item
 // @route   POST /api/patient/intake
@@ -7,31 +8,43 @@ exports.logIntake = async (req, res) => {
   try {
     const { date, mealType, foodId, quantity, unit } = req.body;
     
-    // 1. Get Food Details (to calculate calories)
+    // 1. Get Food Details
     const food = await FoodItem.findById(foodId);
     if (!food) return res.status(404).json({ message: 'Food not found' });
 
     const calories = food.calories * quantity; 
 
-    // 2. Normalize Date (Strip time)
+    // 2. Normalize Date
     const logDate = new Date(date);
     logDate.setHours(0, 0, 0, 0);
 
-    // 3. Find Log for this day OR Create new one
+    // 3. Find Log OR Create new one
     let log = await IntakeLog.findOne({ 
       patient: req.user._id, 
       date: logDate 
     });
 
+    // 4. Fetch Patient Details (Needed for both new logs and fixing old logs)
+    // We need to know who the dietitian is to save the log correctly
+    const patientDetails = await User.findById(req.user._id);
+
     if (!log) {
+      // CASE A: Create New Log
       log = new IntakeLog({
         patient: req.user._id,
+        dietitian: patientDetails.createdByDietitian, // Auto-assign Dietitian
         date: logDate,
         meals: { breakfast: [], lunch: [], dinner: [], snack: [] }
       });
+    } else {
+      // CASE B: Fix Old Log (Migration Fix)
+      // If an existing log doesn't have a dietitian set, backfill it now
+      if (!log.dietitian) {
+        log.dietitian = patientDetails.createdByDietitian;
+      }
     }
 
-    // 4. Push item to the correct meal array
+    // 5. Push item
     log.meals[mealType].push({
       foodItem: foodId,
       quantity,
@@ -39,19 +52,19 @@ exports.logIntake = async (req, res) => {
       calories
     });
 
-    // 5. Update Total Calories
+    // 6. Update Total Calories
     log.totalCalories += calories;
 
     await log.save();
     res.status(200).json(log);
 
   } catch (error) {
+    console.error("Intake Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Get logs for a specific date
-// @route   GET /api/patient/intake
+// ... (Keep your getIntakeByDate and getPatientLogForDietitian functions exactly as they were)
 exports.getIntakeByDate = async (req, res) => {
   try {
     const { date } = req.query;
@@ -80,8 +93,6 @@ exports.getIntakeByDate = async (req, res) => {
   }
 };
 
-// @desc    (Dietitian) Get logs for a specific patient & date
-// @route   GET /api/dietitian/patients/:patientId/logs?date=...
 exports.getPatientLogForDietitian = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -91,7 +102,7 @@ exports.getPatientLogForDietitian = async (req, res) => {
     queryDate.setHours(0, 0, 0, 0);
 
     const log = await IntakeLog.findOne({ 
-      patient: patientId, // Search by the URL param, not logged-in user
+      patient: patientId, 
       date: queryDate 
     }).populate('meals.breakfast.foodItem')
       .populate('meals.lunch.foodItem')
