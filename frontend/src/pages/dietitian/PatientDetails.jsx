@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'; // Import Recharts
 import api from '../../api/axiosInstance';
 import CreatePlanModal from '../../components/forms/CreatePlanModal';
 import EditPatientModal from '../../components/forms/EditPatientModal';
@@ -97,10 +98,24 @@ const PatientDetails = () => {
     }
   };
 
+  // --- PIE CHART DATA PREPARATION ---
+  // Calculates macros from analysis data, or uses defaults if empty
+  const macroData = analysisData?.averageMacros ? [
+    { name: 'Protein', value: Math.round(analysisData.averageMacros.protein || 0) },
+    { name: 'Carbs', value: Math.round(analysisData.averageMacros.carbs || 0) },
+    { name: 'Fats', value: Math.round(analysisData.averageMacros.fat || 0) },
+  ] : [
+    { name: 'Protein', value: 30 },
+    { name: 'Carbs', value: 45 },
+    { name: 'Fats', value: 25 },
+  ];
+
+  // Colors: Emerald (Protein), Blue (Carbs), Orange (Fats)
+  const COLORS = ['#10b981', '#3b82f6', '#f59e0b']; 
+
   if (!patient) return <div className="p-12 text-center animate-pulse text-primary-600 font-bold">Loading Profile...</div>;
 
   return (
-    // ROOT: Increased gap to gap-12 to force separation between major sections
     <div className="flex flex-col gap-12 pb-20 max-w-7xl mx-auto w-full">
       
       {/* --- SECTION 1: HEADER --- */}
@@ -130,13 +145,11 @@ const PatientDetails = () => {
       </header>
 
       {/* --- SECTION 2: ANALYSIS ROW --- */}
-      {/* Flex-col on mobile, Row on Large screens. */}
       <div className="flex flex-col lg:flex-row gap-6 w-full items-stretch">
         
-        {/* Nutrient Chart */}
-        {/* CHANGED: Removed fixed height, added min-h-[400px] to prevent bleeding */}
+        {/* Nutrient Chart (66% Width) */}
         <div className="w-full lg:w-2/3 group bg-white rounded-3xl p-6 shadow-sm border border-earth-200 transition-all duration-300 hover:bg-primary-900 hover:border-primary-900 hover:shadow-xl hover:scale-[1.01]">
-          <h2 className="text-lg font-serif font-bold text-primary-900 mb-4 group-hover:text-white transition-colors">Nutrient Balance</h2>
+          <h2 className="text-lg font-serif font-bold text-primary-900 mb-4 group-hover:text-white transition-colors">Nutrient Balance History</h2>
           
           <div className="w-full min-h-[400px] bg-white/50 rounded-xl p-2 transition-colors group-hover:bg-white/90">
              {analysisData ? (
@@ -147,59 +160,71 @@ const PatientDetails = () => {
           </div>
         </div>
 
-        {/* Ayurvedic Impact */}
-        {/* CHANGED: min-h-[400px] to match chart height */}
-        <div className="w-full lg:w-1/3 bg-primary-900 text-white rounded-3xl p-6 shadow-md border border-primary-800 flex flex-col relative overflow-hidden min-h-[400px]">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary-800 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
-          
-          <div className="relative z-10 flex-1">
-            <h2 className="text-lg font-serif font-bold text-primary-100 mb-1">Ayurvedic Impact</h2>
-            <p className="text-primary-300 text-xs mb-6">Based on recent food intake</p>
+        {/* REPLACED: Ayurvedic Impact -> Macronutrient Pie Chart (33% Width) */}
+        <div className="w-full lg:w-1/3 bg-white rounded-3xl p-6 shadow-sm border border-earth-200 flex flex-col min-h-[400px] transition-all hover:shadow-md">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-lg font-serif font-bold text-earth-900">Macro Distribution</h2>
+            <span className="text-xs font-bold text-earth-400 uppercase tracking-wider">Avg. 30 Days</span>
+          </div>
+          <p className="text-earth-500 text-xs mb-4">Caloric breakdown by nutrient type</p>
 
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between text-sm font-bold mb-2">
-                  <span className="text-orange-200">Pitta (Heat)</span>
-                  <span className="text-white">High</span>
-                </div>
-                <div className="w-full bg-primary-800 rounded-full h-2">
-                  <div className="bg-orange-400 h-2 rounded-full w-[75%]"></div>
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between text-sm font-bold mb-2">
-                  <span className="text-purple-200">Vata (Air)</span>
-                  <span className="text-white">Balanced</span>
-                </div>
-                <div className="w-full bg-primary-800 rounded-full h-2">
-                  <div className="bg-purple-400 h-2 rounded-full w-[30%]"></div>
-                </div>
-              </div>
-
-               <div>
-                <div className="flex justify-between text-sm font-bold mb-2">
-                  <span className="text-blue-200">Kapha (Earth)</span>
-                  <span className="text-white">Low</span>
-                </div>
-                <div className="w-full bg-primary-800 rounded-full h-2">
-                  <div className="bg-blue-400 h-2 rounded-full w-[15%]"></div>
-                </div>
-              </div>
+          <div className="flex-1 min-h-[250px] relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={macroData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {macroData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ color: '#374151', fontSize: '12px', fontWeight: 'bold' }}
+                />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36} 
+                  iconType="circle"
+                  formatter={(value) => <span className="text-earth-600 font-medium ml-1 text-sm">{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            
+            {/* Center Label (Total Calories) */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -mt-4 text-center pointer-events-none">
+              <span className="block text-3xl font-bold text-primary-900 leading-none">
+                {dailyLog?.totalCalories || 0}
+              </span>
+              <span className="text-[10px] text-earth-400 uppercase font-bold tracking-widest block mt-1">kcal Today</span>
             </div>
           </div>
           
-          <div className="mt-6 pt-4 border-t border-primary-800 relative z-10">
-            <p className="text-xs text-primary-200 leading-relaxed">
-              <strong className="text-white block mb-1">Recommendation:</strong>
-              Reduce heating foods (Pungent/Sour) to pacify Pitta aggravation. Increase cooling hydration.
-            </p>
+          {/* Quick Legend/Summary */}
+          <div className="mt-4 pt-4 border-t border-earth-100 grid grid-cols-3 gap-2 text-center">
+             <div>
+               <span className="block text-xs text-earth-400 font-bold uppercase">Protein</span>
+               <span className="text-emerald-600 font-bold">{macroData[0].value}g</span>
+             </div>
+             <div className="border-l border-earth-100">
+               <span className="block text-xs text-earth-400 font-bold uppercase">Carbs</span>
+               <span className="text-blue-600 font-bold">{macroData[1].value}g</span>
+             </div>
+             <div className="border-l border-earth-100">
+               <span className="block text-xs text-earth-400 font-bold uppercase">Fats</span>
+               <span className="text-orange-500 font-bold">{macroData[2].value}g</span>
+             </div>
           </div>
         </div>
       </div>
 
       {/* --- SECTION 3: MANAGEMENT ROW --- */}
-      {/* This section will naturally flow BELOW section 2 because of the main flex-col gap-12 */}
       <div className="flex flex-col xl:flex-row gap-8 w-full items-start">
         
         {/* LEFT: Diet Plan History */}
@@ -274,7 +299,7 @@ const PatientDetails = () => {
               <h2 className="text-2xl font-serif font-bold text-earth-900 flex items-center gap-2 group-hover:text-white transition-colors">
                 <span>📖</span> Patient Journal
               </h2>
-              <p className="text-earth-600 text-sm group-hover:text-primary-200 transition-colors">Review daily food intake logs.</p>
+              <p className="text-earth-600 text-sm group-hover:text-lime-200 transition-colors">Review daily food intake logs.</p>
             </div>
             
             <input
@@ -288,12 +313,12 @@ const PatientDetails = () => {
           <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-earth-100 relative overflow-hidden group-hover:bg-white/10 group-hover:border-primary-700 transition-colors">
             
             <div className="flex justify-between items-center pb-6 border-b-2 border-earth-50 mb-6 group-hover:border-white/10">
-              <span className="text-earth-400 text-xs font-bold uppercase tracking-widest group-hover:text-primary-300">Total Intake</span>
+              <span className="text-earth-400 text-xs font-bold uppercase tracking-widest group-hover:text-lime-300">Total Intake</span>
               <div className="text-right">
                 <span className="text-4xl font-serif font-bold text-primary-700 block leading-none group-hover:text-white">
                   {dailyLog?.totalCalories || 0}
                 </span>
-                <span className="text-xs text-earth-400 font-bold uppercase group-hover:text-primary-300">Calories</span>
+                <span className="text-xs text-earth-400 font-bold uppercase group-hover:text-lime-300">Calories</span>
               </div>
             </div>
 
@@ -306,9 +331,9 @@ const PatientDetails = () => {
                       <div className="w-1.5 h-1.5 rounded-full bg-primary-500 group-hover:bg-primary-300"></div>
                     </div>
                     <div className="w-full">
-                      <h3 className="text-xs font-bold text-earth-500 uppercase tracking-widest mb-2 group-hover:text-primary-200">{meal}</h3>
+                      <h3 className="text-xs font-bold text-earth-500 uppercase tracking-widest mb-2 group-hover:text-lime-200">{meal}</h3>
                       {!dailyLog.meals[meal] || dailyLog.meals[meal].length === 0 ? (
-                        <div className="text-sm text-earth-300 italic bg-earth-50/50 p-2 rounded-lg group-hover:bg-white/5 group-hover:text-primary-200/50">No entry logged</div>
+                        <div className="text-sm text-earth-300 italic bg-earth-50/50 p-2 rounded-lg group-hover:bg-white/5 group-hover:text-lime-200/50">No entry logged</div>
                       ) : (
                         <ul className="space-y-2">
                           {dailyLog.meals[meal].map((item, idx) => (

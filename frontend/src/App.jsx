@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import Landing from './pages/Landing';
 import Login from "./pages/auth/Login";
 import DietitianDashboard from "./pages/dietitian/Dashboard";
 import MyPatients from "./pages/dietitian/MyPatients";
@@ -16,12 +17,16 @@ import DashboardOverview from "./pages/dietitian/DashboardOverview";
 function App() {
   return (
     <Routes>
+      {/* 1. HOME PAGE (Landing) - This fixes the redirect issue */}
+      <Route path="/" element={<Landing />} />
+
+      {/* Auth Routes */}
       <Route path="/auth/login" element={<Login />} />
       <Route path="/login" element={<Navigate to="/auth/login" replace />} />
       <Route path="/auth/register" element={<Register />} />
       <Route path="/auth/verify-email" element={<VerifyEmail />} />
 
-      {/* ---------------- DIETITIAN ROUTES ---------------- */}
+      {/* ---------------- DIETITIAN PROTECTED ROUTES ---------------- */}
       <Route element={<ProtectedRoute allowedRoles={["dietitian"]} />}>
         <Route path="/dashboard" element={<DietitianDashboard />}>
           <Route index element={<DashboardOverview />} />
@@ -32,16 +37,16 @@ function App() {
         </Route>
       </Route>
 
-      {/* ---------------- PATIENT ROUTES ---------------- */}
-      {/* 👇 ADD THIS SECTION */}
+      {/* ---------------- PATIENT PROTECTED ROUTES ---------------- */}
       <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
         <Route path="/patient/dashboard" element={<PatientDashboard />} />
+        {/* I moved these INSIDE the protected route so only logged-in patients can see them */}
+        <Route path="/patient/log-intake" element={<LogIntake />} />
+        <Route path="/patient/book-appointment" element={<BookAppointment />} />
       </Route>
 
-      {/* Redirect Root to Login */}
-      <Route path="/" element={<Navigate to="/auth/login" replace />} />
-      <Route path="/patient/log-intake" element={<LogIntake />} />
-      <Route path="/patient/book-appointment" element={<BookAppointment />} />
+      {/* Catch-all: If route doesn't exist, go to Landing Page */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
