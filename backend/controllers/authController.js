@@ -1,10 +1,10 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/sendEmail');
-const crypto = require('crypto'); // Built-in Node module
+const crypto = require('crypto');
 
-// 1. UPDATED: Accept the whole user object to include name/email in token
-// <--- CHANGED THIS FUNCTION
+// --- HELPER FUNCTIONS ---
+
 const generateAccessToken = (user) => {
   return jwt.sign(
     { 
@@ -22,7 +22,10 @@ const generateRefreshToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 };
 
+// --- CONTROLLERS ---
+
 // @desc    Register a new Dietitian
+// @route   POST /api/auth/register
 exports.registerDietitian = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -32,22 +35,21 @@ exports.registerDietitian = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // 1. Generate a random verification token
+    // Generate token
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // 2. Create User (isVerified: FALSE)
+    // Create User
     const user = await User.create({
       name,
       email,
-      passwordHash: password,
+      passwordHash: password, // Ensure your User model handles hashing in pre-save
       role: 'dietitian',
-      isVerified: false, // <--- CHANGED
-      verificationToken  // <--- Save the token
+      isVerified: false,
+      verificationToken
     });
 
-    // 3. Create Verification Link
+    // Send Email
     const verifyUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${verificationToken}`;
-
     const message = `
       <h1>Welcome to AyurCare!</h1>
       <p>Please click the link below to verify your email address:</p>
@@ -63,75 +65,75 @@ exports.registerDietitian = async (req, res) => {
 
       res.status(201).json({
         success: true,
-        message: 'Registration successful! Please check your email to verify account.'
+        message: 'Registration successful! Please check your email.'
       });
     } catch (error) {
-      // If email fails, delete the user so they can try again
       await user.deleteOne(); 
-      res.status(500).json({ message: 'Email could not be sent. Registration failed.' });
+      return res.status(500).json({ message: 'Email could not be sent. Registration failed.' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 // @desc    Login user & get token
+// @route   POST /api/auth/login
 exports.login = async (req, res) => {
-    try {
-      const { email, password } = req.body;
-  
-      const user = await User.findOne({ email });
-  
-      if (user && (await user.matchPassword(password))) {
-        
-        // 3. UPDATED: Pass the whole user object
-        // <--- CHANGED HERE
-        if (!user.isVerified) {
+  try {
+    const { email, password } = req.body;
+
+    // Check for user & include password for checking
+    const user = await User.findOne({ email }).select('+passwordHash');
+
+    if (user && (await user.matchPassword(password))) {
+      
+      if (!user.isVerified) {
         return res.status(401).json({ message: 'Please verify your email first.' });
       }
-        const accessToken = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user._id);
-  
-        res.cookie('jwt', refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV !== 'development',
-          sameSite: 'strict',
-          maxAge: 7 * 24 * 60 * 60 * 1000 
-        });
-  
-        res.json({
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          accessToken
-        });
-      } else {
-        res.status(401).json({ message: 'Invalid email or password' });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  };
 
-  // @desc    Verify User Email
+      const accessToken = generateAccessToken(user);
+      const refreshToken = generateRefreshToken(user._id);
+
+      // Send Refresh Token in HTTP-Only Cookie
+      res.cookie('jwt', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV !== 'development',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        accessToken
+      });
+    } else {
+      res.status(401).json({ message: 'Invalid email or password' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Verify User Email
 // @route   POST /api/auth/verify-email
 exports.verifyEmail = async (req, res) => {
   try {
     const { token } = req.body;
 
-    // Find user with this token
     const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired token' });
     }
 
-    // Verify User
     user.isVerified = true;
-    user.verificationToken = undefined; // Clear the token
+    user.verificationToken = undefined;
     await user.save();
 
-    // Generate Tokens (Auto-login after verify)
+    // Auto-login
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user._id);
 
@@ -143,10 +145,7 @@ exports.verifyEmail = async (req, res) => {
     });
 
     res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        success: true,
         accessToken,
         message: "Email verified successfully!"
     });
@@ -154,4 +153,44 @@ exports.verifyEmail = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+// @desc    Change Password (REQUIRED for Patient Flow)
+// @route   POST /api/auth/change-password
+exports.changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    // Get user (ID comes from auth middleware)
+    const user = await User.findById(req.user.id).select('+passwordHash');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check old password
+    const isMatch = await user.matchPassword(oldPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Incorrect current password' });
+    }
+
+    // Update password (Model pre-save hook handles hashing)
+    user.passwordHash = newPassword; 
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Logout User
+// @route   POST /api/auth/logout
+exports.logout = (req, res) => {
+  res.cookie('jwt', '', {
+    httpOnly: true,
+    expires: new Date(0)
+  });
+  res.status(200).json({ message: 'Logged out successfully' });
 };
