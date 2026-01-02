@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const IntakeLog = require('../models/IntakeLog');
-const DietPlan = require('../models/DietPlan'); // <--- Essential for targets
+const DietPlan = require('../models/DietPlan'); 
 
 // --- HELPER FUNCTION: Core Calculation Logic ---
 // This ensures both Dietitian and Patient see the EXACT same math.

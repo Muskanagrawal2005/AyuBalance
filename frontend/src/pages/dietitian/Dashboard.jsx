@@ -195,7 +195,7 @@ const DietitianDashboard = () => {
 
           <div className="flex items-center gap-4">
             {/* Notification Bell (Visual only) */}
-            <button className="p-2 text-earth-400 hover:text-primary-600 transition-colors relative">
+            {/* <button className="p-2 text-earth-400 hover:text-primary-600 transition-colors relative">
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-earth-50"></span>
               <svg
                 className="w-6 h-6"
@@ -210,7 +210,7 @@ const DietitianDashboard = () => {
                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                 />
               </svg>
-            </button>
+            </button> */}
 
             {/* Profile Badge */}
             <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-earth-100">

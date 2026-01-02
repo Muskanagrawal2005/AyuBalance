@@ -11,7 +11,7 @@ const PatientDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [analysisData, setAnalysisData] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  
+
   // Modal States
   const [showSettings, setShowSettings] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState(false);
@@ -49,18 +49,32 @@ const PatientDashboard = () => {
     };
     fetchData();
 
-    // Load Streak from LocalStorage (Simulating Backend)
-    const storedStreak = JSON.parse(localStorage.getItem("userStreak")) || {
-      count: 0,
-      lastCheckIn: null,
-    };
-    setStreakData(storedStreak);
+    // --- UPDATED STREAK & HYDRATION LOAD LOGIC ---
+    if (user && user._id) {
+      // 1. Load Streak (Unique to User ID)
+      const streakKey = `streak_${user._id}`;
+      const storedStreak = JSON.parse(localStorage.getItem(streakKey)) || {
+        count: 0,
+        lastCheckIn: null,
+      };
+      setStreakData(storedStreak);
 
-    const today = new Date().toDateString();
-    if (storedStreak.lastCheckIn === today) {
-      setCheckedInToday(true);
+      const today = new Date().toDateString();
+      if (storedStreak.lastCheckIn === today) {
+        setCheckedInToday(true);
+      }
+
+      // 2. Load Hydration (Unique to User ID + Today's Date)
+      const hydrationKey = `hydration_${user._id}_${today}`;
+      const savedHydration = localStorage.getItem(hydrationKey);
+
+      if (savedHydration) {
+        setWaterIntake(parseInt(savedHydration));
+      } else {
+        setWaterIntake(0); // Reset for new day or new user
+      }
     }
-  }, []);
+  }, [user]); // Added user dependency
 
   // --- STREAK FUNCTIONALITY ---
   const handleCheckIn = () => {
@@ -72,10 +86,26 @@ const PatientDashboard = () => {
 
     setStreakData(newStreakData);
     setCheckedInToday(true);
-    localStorage.setItem("userStreak", JSON.stringify(newStreakData)); // Save it
 
-    // Simple confetti effect (optional visual cue)
+    // Save with User ID key
+    if (user && user._id) {
+      localStorage.setItem(`streak_${user._id}`, JSON.stringify(newStreakData));
+    }
+
     alert(`🔥 Streak Increased! You are on a ${newCount} day streak.`);
+  };
+
+  // --- HYDRATION HELPER ---
+  const updateWaterIntake = (newAmount) => {
+    const validAmount = Math.max(0, Math.min(8, newAmount));
+    setWaterIntake(validAmount);
+
+    // Save to LocalStorage with Date & User Key
+    if (user && user._id) {
+      const today = new Date().toDateString();
+      const hydrationKey = `hydration_${user._id}_${today}`;
+      localStorage.setItem(hydrationKey, validAmount.toString());
+    }
   };
 
   const nextAppt = appointments
@@ -361,13 +391,13 @@ const PatientDashboard = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => setWaterIntake(Math.max(0, waterIntake - 1))}
+                  onClick={() => updateWaterIntake(waterIntake - 1)}
                   className="py-3 rounded-xl bg-black/20 hover:bg-black/30 font-bold transition-colors"
                 >
                   - Remove
                 </button>
                 <button
-                  onClick={() => setWaterIntake(Math.min(8, waterIntake + 1))}
+                  onClick={() => updateWaterIntake(waterIntake + 1)}
                   className="py-3 rounded-xl bg-white text-blue-600 font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
                 >
                   + Drink
@@ -467,7 +497,7 @@ const PatientDashboard = () => {
       </div>
 
       {/* --- MODALS SECTION (Correctly placed at the root) --- */}
-      
+
       {/* 1. Streak Modal */}
       {showStreakModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
@@ -507,7 +537,6 @@ const PatientDashboard = () => {
       {showSettings && (
         <ChangePasswordModal onClose={() => setShowSettings(false)} />
       )}
-
     </div>
   );
 };
